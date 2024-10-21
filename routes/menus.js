@@ -76,4 +76,73 @@ router.get("/", async (req, res, next) => {
   }
 });
 
+//특정 메뉴 정보를 반환합니다.  // 언디파인과 같은 다른경우(문자라든지 숫자라든지)들을 어떻게 해라~
+router.get("/:menuId", async (req, res, next) => {
+  const id = Number(req.params.menuId);
+
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "유효하지 않은 메뉴 ID입니다." });
+  }
+
+  const findmenu = await prisma.menu.findUnique({ where: { id } });
+
+  if(!findmenu) {
+    res.status(404).json({massge: "메뉴를 찾지 못했습니다."})
+  }
+
+  res.status(200).json({ findmenu });
+});
+
+// 새로운 메뉴를 생성합니다.
+router.post("/", async (req, res, next) => {
+  console.log(req.body);
+
+  const data = {
+    name: req.body.name,
+    type: req.body.type,
+    temperature: req.body.temperature,
+    price: Number(req.body.price),
+  };
+
+  const createMenu = await prisma.menu.create({ data });
+
+  res.status(201).json({message: "메뉴 생성되었습니다.", menu: { id: createMenu.id },});
+});
+
+// 특정 메뉴를 수정합니다
+router.put("/:menuId", async (req, res, next) => {
+  const id = Number(req.params.menuId);
+  console.log(req.body);
+
+  const data = {
+    name: req.body.name,
+    type: req.body.type,
+    temperature: req.body.temperature,
+    price: Number(req.body.price),
+  };
+
+  await prisma.menu.update({ where: { id }, data });
+
+  res.status(200).json({
+    message: `메뉴 ${id} 수정되었습니다.`,
+  });
+});
+
+// 특정 메뉴를 삭제합니다.
+router.delete("/:menuId", async (req, res, next) => {
+  const id = Number(req.params.menuId);
+  console.log(req.body);
+
+  // 해당 메뉴에 대한 모든 주문 내역 삭제
+  await prisma.orderHistory.deleteMany({ where: { menu_id: id } });
+
+  // 삭제하려고하니 주문기록이 남아있어 오류가 났다(Foreign key constraint violated: menu_id)
+  // 그래서 이걸하기 전에 위에 걸 해줘야한다
+  await prisma.menu.delete({ where: { id } });
+
+  res.status(200).json({
+    message: `메뉴 ${id} 삭제되었습니다.`,
+  });
+});
+
 export default router;

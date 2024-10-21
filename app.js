@@ -17,8 +17,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(path.resolve(), 'public')));
 
-app.use('/', indexRouter);
-app.use('/menus', menusRouter);
+app.use('/api/menus', menusRouter);
 
+app.get('/*', (req,res) =>{
+    res.sendFile(path.join(path.resolve() , 'public', 'index.html'));
+});
 
 export default app;
